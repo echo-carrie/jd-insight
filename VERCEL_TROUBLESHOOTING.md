@@ -27,7 +27,31 @@ npx tsc --noEmit
 
 ---
 
-### 2. Vercel 配置冲突
+### 2. Vercel 函数路径匹配错误
+
+#### 错误信息：
+```
+Error: The pattern "server/api/**/*.ts" defined in `functions` doesn't match any Serverless Functions inside the `api` directory.
+```
+
+#### 解决方案：
+✅ **已修复** - 对于 Nuxt.js 项目，Vercel 会自动处理服务端函数，无需手动配置 `functions` 属性：
+
+```json
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nuxtjs"
+}
+```
+
+**说明**：
+- Nuxt.js 的 `server/api/` 目录会自动转换为 Vercel Functions
+- 无需在 `vercel.json` 中手动配置函数路径
+- Vercel 会根据文件结构自动创建对应的 API 路由
+
+### 3. Vercel 配置冲突
 
 #### 错误信息：
 ```
@@ -35,21 +59,7 @@ The 'functions' property cannot be used in conjunction with the 'builds' propert
 ```
 
 #### 解决方案：
-✅ **已修复** - 使用了正确的 Vercel 配置格式：
-
-```json
-{
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nuxtjs",
-  "functions": {
-    "server/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  }
-}
-```
+✅ **已修复** - 使用简化的配置格式，让 Vercel 自动处理。
 
 ---
 

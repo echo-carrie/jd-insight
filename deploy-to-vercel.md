@@ -133,26 +133,24 @@ npm run build
 # 3. Vercel 构建日志中的具体错误
 ```
 
-### 问题 2: vercel.json 配置错误
-**错误信息：** `The 'functions' property cannot be used in conjunction with the 'builds' property`
+### 问题 2: Vercel 函数路径匹配错误
+**错误信息：** `The pattern "server/api/**/*.ts" defined in 'functions' doesn't match any Serverless Functions`
 
 **解决方案：**
-这是因为 `vercel.json` 中同时使用了 `builds` 和 `functions` 属性。已修复，现在使用正确的配置：
+对于 Nuxt.js 项目，Vercel 会自动处理服务端函数，无需手动配置。已修复配置：
 ```json
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "nuxt.config.ts",
-      "use": "@nuxtjs/vercel-builder",
-      "config": {
-        "serverFiles": ["server/**"],
-        "maxDuration": 30
-      }
-    }
-  ]
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nuxtjs"
 }
 ```
+
+**说明：**
+- Nuxt.js 的 `server/api/` 目录会自动转换为 Vercel Functions
+- 无需手动配置函数路径
+- Vercel 会根据文件结构自动创建 API 路由
 
 ### 问题 3: API 路由返回 404
 **解决方案：**

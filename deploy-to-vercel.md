@@ -123,7 +123,28 @@ npm run build
 # 3. Vercel 构建日志中的具体错误
 ```
 
-### 问题 2: API 路由返回 404
+### 问题 2: vercel.json 配置错误
+**错误信息：** `The 'functions' property cannot be used in conjunction with the 'builds' property`
+
+**解决方案：**
+这是因为 `vercel.json` 中同时使用了 `builds` 和 `functions` 属性。已修复，现在使用正确的配置：
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "nuxt.config.ts",
+      "use": "@nuxtjs/vercel-builder",
+      "config": {
+        "serverFiles": ["server/**"],
+        "maxDuration": 30
+      }
+    }
+  ]
+}
+```
+
+### 问题 3: API 路由返回 404
 **解决方案：**
 1. 检查 `server/api/v1/` 目录下的文件是否存在
 2. 确保文件名以 `.post.ts` 或 `.get.ts` 结尾
@@ -178,4 +199,6 @@ npm install @sentry/nuxt
 
 ---
 
-需要帮助？随时询问！ 🚀
+需要帮助？随时询问！ 🚀git add .
+git commit -m "Ready for Vercel deployment"
+git push origin main

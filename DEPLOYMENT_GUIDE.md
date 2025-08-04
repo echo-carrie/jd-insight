@@ -249,7 +249,29 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### 2. API 路由不工作
+### 2. vercel.json 配置冲突
+**错误信息：** `The 'functions' property cannot be used in conjunction with the 'builds' property`
+
+**解决方案：** 
+在 Vercel 配置中，不能同时使用 `builds` 和 `functions` 属性。正确的配置应该是：
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "nuxt.config.ts",
+      "use": "@nuxtjs/vercel-builder",
+      "config": {
+        "serverFiles": ["server/**"],
+        "maxDuration": 30
+      }
+    }
+  ]
+}
+```
+
+### 3. API 路由不工作
 确保 `server/api/` 目录结构正确，文件名以 `.post.ts` 或 `.get.ts` 结尾。
 
 ### 3. 环境变量未生效

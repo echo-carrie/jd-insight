@@ -2,24 +2,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   
-  // Nitro配置 - 针对Vercel优化
-  nitro: {
-    compatibilityDate: '2025-08-04',
-    preset: 'vercel',
-    // 为API路由设置更长的超时时间
-    routeRules: {
-      '/api/**': { 
-        cors: true,
-        headers: { 
-          'cache-control': 's-maxage=60',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      }
-    }
-  },
-
   // 开启SSR
   ssr: true,
 
@@ -31,22 +13,14 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/device',
     '@nuxtjs/robots',
-    '@nuxtjs/sitemap',
+    // '@nuxtjs/sitemap', // 禁用sitemap模块，使用静态文件
     '@nuxtjs/fontaine',
     '@nuxt/image',
   ],
   
-  // Sitemap配置 - 解决Vercel部署冲突
+  // 站点配置
   site: {
     url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  },
-  
-  sitemap: {
-    urls: [],
-    exclude: [
-      '/admin/**'
-    ],
-    autoLastmod: true
   },
 
   // 应用配置
@@ -88,6 +62,28 @@ export default defineNuxtConfig({
         skipLibCheck: true,
         noImplicitAny: false,
         moduleResolution: "bundler"
+      }
+    }
+  },
+  
+  // Nitro 配置优化 - 减少内存使用
+  nitro: {
+    preset: 'vercel',
+    compatibilityDate: '2025-08-04',
+    minify: true,
+    compressPublicAssets: true,
+    routeRules: {
+      '/api/**': { 
+        cors: true,
+        headers: { 
+          'cache-control': 's-maxage=60',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      },
+      '/**': { 
+        isr: true 
       }
     }
   },

@@ -29,12 +29,6 @@
     },
     {
       "headers": {
-        "Content-Type": "application/xslt+xml"
-      },
-      "src": "/sitemap.xsl"
-    },
-    {
-      "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       },
       "src": "/_nuxt/(.*)"
@@ -68,12 +62,8 @@
       "dest": "/__nitro"
     },
     {
-      "src": "/sitemap.xml",
-      "dest": "/sitemap.xml?url=$url"
-    },
-    {
-      "src": "/sitemap.xml",
-      "dest": "/sitemap.xml"
+      "src": "(?<url>/.*)",
+      "dest": "/__nitro-/?url=$url"
     },
     {
       "src": "/robots.txt",
@@ -96,12 +86,8 @@
       "dest": "/api/v1/analyze"
     },
     {
-      "src": "/api/sitemap",
-      "dest": "/api/sitemap"
-    },
-    {
-      "src": "/__sitemap__/style.xsl",
-      "dest": "/__sitemap__/style.xsl"
+      "src": "/api/generate-sitemap",
+      "dest": "/api/generate-sitemap"
     },
     {
       "src": "/__nuxt_error",
@@ -114,10 +100,6 @@
     {
       "src": "/__nuxt_island/(?:.*)",
       "dest": "/__nuxt_island/[...]"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/__nitro"
     }
   ]
 }

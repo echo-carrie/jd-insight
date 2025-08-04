@@ -137,20 +137,30 @@ npm run build
 **错误信息：** `The pattern "server/api/**/*.ts" defined in 'functions' doesn't match any Serverless Functions`
 
 **解决方案：**
-对于 Nuxt.js 项目，Vercel 会自动处理服务端函数，无需手动配置。已修复配置：
+✅ **最佳解决方案** - 完全删除 `vercel.json` 文件，让 Vercel 自动检测 Nuxt.js 配置：
+
+```bash
+# 删除 vercel.json 文件
+rm vercel.json
+
+# 提交更改
+git add .
+git commit -m "Remove vercel.json - let Vercel auto-detect configuration"
+git push origin main
+```
+
+**为什么这样做：**
+- Nuxt.js 项目通常不需要 `vercel.json` 配置文件
+- Vercel 可以自动检测 Nuxt.js 项目并正确配置
+- 自动配置避免了手动配置错误
+- `server/api/` 目录会自动转换为 Vercel Functions
+
+**如果仍需要配置文件，使用最简配置：**
 ```json
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "framework": "nuxtjs"
 }
 ```
-
-**说明：**
-- Nuxt.js 的 `server/api/` 目录会自动转换为 Vercel Functions
-- 无需手动配置函数路径
-- Vercel 会根据文件结构自动创建 API 路由
 
 ### 问题 3: API 路由返回 404
 **解决方案：**

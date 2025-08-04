@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node", "@nuxt/types"],
+    "types": ["node"],
     "allowJs": true,
     "strict": false,
     "skipLibCheck": true,

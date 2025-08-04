@@ -35,6 +35,19 @@ export default defineNuxtConfig({
     '@nuxtjs/fontaine',
     '@nuxt/image',
   ],
+  
+  // Sitemap配置 - 解决Vercel部署冲突
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  },
+  
+  sitemap: {
+    urls: [],
+    exclude: [
+      '/admin/**'
+    ],
+    autoLastmod: true
+  },
 
   // 应用配置
   app: {

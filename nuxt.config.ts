@@ -64,11 +64,19 @@ export default defineNuxtConfig({
     }
   },
 
-  // TypeScript配置
+  // TypeScript配置 - 针对Vercel构建优化
   typescript: {
     strict: false,
     typeCheck: false,
-    shim: false
+    shim: false,
+    tsConfig: {
+      compilerOptions: {
+        strict: false,
+        skipLibCheck: true,
+        noImplicitAny: false,
+        moduleResolution: "bundler"
+      }
+    }
   },
 
   // 暗色模式配置

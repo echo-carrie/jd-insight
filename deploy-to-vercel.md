@@ -111,7 +111,17 @@ vercel --prod
 
 ## 🐛 常见问题解决
 
-### 问题 1: 构建失败
+### 问题 1: TypeScript 配置读取失败
+**错误信息：** `Error: Can not read tsconfig.json from /vercel/path0`
+
+**解决方案：**
+这是因为 Vercel 构建环境中 `.nuxt/tsconfig.json` 文件可能未正确生成。已修复：
+
+1. 更新了 `tsconfig.json` 配置，添加了完整的编译选项
+2. 创建了 `tsconfig.build.json` 作为备用配置
+3. 优化了 `nuxt.config.ts` 中的 TypeScript 设置
+
+### 问题 2: 构建失败
 **解决方案：**
 ```bash
 # 本地测试构建

@@ -42,6 +42,11 @@ export default defineNuxtConfig({
     // 私有密钥 (仅在服务端可用)
     openaiApiKey: process.env.NUXT_OPENAI_API_KEY || '',
     jwtSecret: process.env.NUXT_JWT_SECRET || '',
+    // Vercel KV配置
+    kvRestApiUrl: process.env.KV_REST_API_URL || '',
+    kvRestApiToken: process.env.KV_REST_API_TOKEN || '',
+    // 服务器预设配置
+    serverPreset: process.env.SERVER_PRESET || 'vercel_edge',
     
     // 公共密钥 (客户端可用)
     public: {
@@ -68,11 +73,28 @@ export default defineNuxtConfig({
   // 兼容性日期
   compatibilityDate: '2025-08-05',
 
-  // Nitro 配置优化 - 减少内存使用
+  // Nitro 配置优化 - 为Vercel Edge Functions和KV Storage配置
   nitro: {
-    preset: 'vercel',
+    preset: 'vercel-edge',
     minify: true,
     compressPublicAssets: true,
+    // 配置Vercel KV存储
+    storage: {
+      'kv': {
+        driver: 'vercelKV',
+        // KV配置将从环境变量中获取
+      }
+    },
+    // 自定义Vercel构建输出配置
+    vercel: {
+      config: {
+        // @ts-ignore - regions 在类型定义中可能缺失，但在文档中是有效的
+        regions: ['hnd1', 'sin1'], // 指定部署区域，例如东京和新加坡
+        isr: {
+          expiration: 60, // ISR缓存过期时间（秒）
+        }
+      }
+    },
     routeRules: {
       '/api/**': { 
         cors: true,

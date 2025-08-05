@@ -72,9 +72,9 @@ export default defineNuxtConfig({
   // 兼容性日期
   compatibilityDate: '2025-08-05',
 
-  // Nitro 配置优化 - 为Vercel Edge Functions和KV Storage配置
+  // Nitro 配置优化 - 使用标准Vercel部署而非Edge Functions
   nitro: {
-    preset: 'vercel-edge',
+    preset: 'vercel',
     minify: true,
     compressPublicAssets: true,
     // 配置Vercel KV存储

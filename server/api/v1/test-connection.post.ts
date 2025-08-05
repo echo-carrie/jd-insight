@@ -1,224 +1,115 @@
+import { readBody } from 'h3'
+import { OpenAI } from 'openai'
+
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { apiProvider, apiKey, model } = body
+    const { apiKey, baseURL, model, type, provider } = body
 
-    if (!apiProvider || !apiKey) {
-      return {
-        success: false,
-        message: '缺少必要参数：API提供商和密钥'
-      }
+    if (!apiKey) {
+      throw new Error('缺少API密钥')
     }
 
-    const startTime = Date.now()
-    let response: any
-    let testModel = model || 'gpt-3.5-turbo'
+    // 根据类型和提供商选择测试方法
+    if (type === 'base') {
+      // 测试基础语言模型
+      const openai = new OpenAI({
+        apiKey,
+        baseURL: baseURL || undefined
+      })
 
-    // 根据不同的API提供商进行测试
-    switch (apiProvider) {
-      case 'openai':
-        response = await testOpenAI(apiKey, testModel)
-        break
-      case 'anthropic':
-        response = await testAnthropic(apiKey, testModel)
-        break
-      case 'moonshot':
-        response = await testMoonshot(apiKey, testModel)
-        break
-      case 'zhipu':
-        response = await testZhipu(apiKey, testModel)
-        break
-      default:
-        return {
-          success: false,
-          message: '不支持的API提供商'
-        }
-    }
+      const completion = await openai.chat.completions.create({
+        model: model || 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: '你是一个有用的助手。' },
+          { role: 'user', content: '请回复"连接测试成功"' }
+        ],
+        max_tokens: 20
+      })
 
-    const responseTime = Date.now() - startTime
-
-    if (response.success) {
       return {
         success: true,
-        message: '连接测试成功',
-        model: response.model || testModel,
-        responseTime,
-        provider: apiProvider
+        message: '基础模型连接测试成功',
+        model: completion.model
+      }
+    } else if (type === 'image') {
+      // 测试图像识别模型
+      let apiUrl = ''
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+      let requestBody: any = {}
+
+      // 根据提供商配置请求
+      if (provider === 'moonshot') {
+        apiUrl = `${baseURL || 'https://api.moonshot.cn/v1'}/chat/completions`
+        headers['Authorization'] = `Bearer ${apiKey}`
+        requestBody = {
+          model: model || 'moonshot-v1-8k',
+          messages: [
+            { role: 'user', content: '请回复"图像识别模型连接测试成功"' }
+          ],
+          max_tokens: 20
+        }
+      } else if (provider === 'zhipu') {
+        apiUrl = `${baseURL || 'https://open.bigmodel.cn/api/paas/v4'}/chat/completions`
+        headers['Authorization'] = `Bearer ${apiKey}`
+        requestBody = {
+          model: model || 'glm-4v',
+          messages: [
+            { role: 'user', content: '请回复"图像识别模型连接测试成功"' }
+          ],
+          max_tokens: 20
+        }
+      } else if (provider === 'aliyun') {
+        apiUrl = `${baseURL || 'https://dashscope.aliyuncs.com/api/v1'}/chat/completions`
+        headers['Authorization'] = `Bearer ${apiKey}`
+        requestBody = {
+          model: model || 'qwen-vl-plus',
+          messages: [
+            { role: 'user', content: '请回复"图像识别模型连接测试成功"' }
+          ],
+          max_tokens: 20
+        }
+      } else {
+        // 默认使用OpenAI兼容格式
+        apiUrl = `${baseURL || 'https://api.openai.com/v1'}/chat/completions`
+        headers['Authorization'] = `Bearer ${apiKey}`
+        requestBody = {
+          model: model || 'gpt-4-vision-preview',
+          messages: [
+            { role: 'user', content: '请回复"图像识别模型连接测试成功"' }
+          ],
+          max_tokens: 20
+        }
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || `请求失败 (${response.status})`)
+      }
+
+      const result = await response.json()
+
+      return {
+        success: true,
+        message: '图像识别模型连接测试成功',
+        model: result.model || model
       }
     } else {
-      return {
-        success: false,
-        message: response.error || '连接测试失败'
-      }
+      throw new Error('未知的测试类型')
     }
   } catch (error) {
-    console.error('连通性测试错误:', error)
+    console.error('连接测试错误:', error)
     return {
       success: false,
-      message: '服务器内部错误'
+      message: error instanceof Error ? error.message : '连接测试失败，请检查API密钥和网络连接'
     }
   }
 })
-
-// OpenAI API 测试
-async function testOpenAI(apiKey: string, model: string) {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          { role: 'user', content: 'Test connection. Please respond with "OK".' }
-        ],
-        max_tokens: 5,
-        temperature: 0
-      })
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      return {
-        success: true,
-        model: data.model || model
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      return {
-        success: false,
-        error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `网络错误: ${error instanceof Error ? error.message : '未知错误'}`
-    }
-  }
-}
-
-// Anthropic API 测试
-async function testAnthropic(apiKey: string, model: string) {
-  try {
-    const testModel = model.includes('claude') ? model : 'claude-3-haiku-20240307'
-    
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: testModel,
-        max_tokens: 5,
-        messages: [
-          { role: 'user', content: 'Test connection. Please respond with "OK".' }
-        ]
-      })
-    })
-
-    if (response.ok) {
-      return {
-        success: true,
-        model: testModel
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      return {
-        success: false,
-        error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `网络错误: ${error instanceof Error ? error.message : '未知错误'}`
-    }
-  }
-}
-
-// Moonshot API 测试
-async function testMoonshot(apiKey: string, model: string) {
-  try {
-    const testModel = model.includes('moonshot') ? model : 'moonshot-v1-8k'
-    
-    const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: testModel,
-        messages: [
-          { role: 'user', content: 'Test connection. Please respond with "OK".' }
-        ],
-        max_tokens: 5,
-        temperature: 0
-      })
-    })
-
-    if (response.ok) {
-      return {
-        success: true,
-        model: testModel
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      return {
-        success: false,
-        error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `网络错误: ${error instanceof Error ? error.message : '未知错误'}`
-    }
-  }
-}
-
-// 智谱AI API 测试
-async function testZhipu(apiKey: string, model: string) {
-  try {
-    const testModel = model.includes('glm') ? model : 'glm-4'
-    
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: testModel,
-        messages: [
-          { role: 'user', content: 'Test connection. Please respond with "OK".' }
-        ],
-        max_tokens: 5,
-        temperature: 0
-      })
-    })
-
-    if (response.ok) {
-      return {
-        success: true,
-        model: testModel
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      return {
-        success: false,
-        error: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`
-      }
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: `网络错误: ${error instanceof Error ? error.message : '未知错误'}`
-    }
-  }
-} 

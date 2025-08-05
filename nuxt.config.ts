@@ -18,10 +18,6 @@ export default defineNuxtConfig({
     '@nuxt/image',
   ],
   
-  // 站点配置
-  site: {
-    url: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  },
 
   // 应用配置
   app: {
@@ -35,6 +31,9 @@ export default defineNuxtConfig({
           content: '基于AI的产品经理岗位JD智能解析工具，帮助产品经理小白快速理解岗位核心能力要求、岗位条件需求和核心产出物。' 
         }
       ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ]
     }
   },
 
@@ -66,10 +65,12 @@ export default defineNuxtConfig({
     }
   },
   
+  // 兼容性日期
+  compatibilityDate: '2025-08-05',
+
   // Nitro 配置优化 - 减少内存使用
   nitro: {
     preset: 'vercel',
-    compatibilityDate: '2025-08-04',
     minify: true,
     compressPublicAssets: true,
     routeRules: {
@@ -101,5 +102,10 @@ export default defineNuxtConfig({
     configPath: '~/tailwind.config.ts',
     exposeConfig: false,
     viewer: true
-  }
+  },
+  
+  // 全局CSS
+  css: [
+    '~/assets/css/main.css'
+  ]
 })

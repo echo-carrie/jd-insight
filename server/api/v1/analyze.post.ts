@@ -78,26 +78,24 @@ export default defineEventHandler(async (event) => {
       throw new Error('请提供JD文本、PDF文件或图片')
     }
 
-    // 如果没有客户端配置，使用服务端默认配置
-    if (!aiConfig) {
-      const config = useRuntimeConfig()
-      if (!config.openaiApiKey) {
-        throw new Error('未配置API密钥，请前往设置页面配置')
-      }
-      
-      // 构建默认提示词
-      let prompt = ''
-      
-      if (imageBase64) {
-        prompt = `请分析以下JD图片，提取三个关键维度的信息：
+    // 如果没有客户端配置，提示用户配置API密钥
+    if (!aiConfig || !aiConfig.apiKey) {
+      throw new Error('请先配置OpenAI API密钥，可以在设置页面进行配置')
+    }
+    
+    // 构建默认提示词
+    let prompt = ''
+    
+    if (imageBase64) {
+      prompt = `请分析以下JD图片，提取三个关键维度的信息：
 
 1. 核心能力要求（3-5条）：提取岗位所需的关键能力和技能
 2. 岗位条件需求：总结学历、经验、必备技能等资格条件
 3. 核心产出物：提取岗位需要完成的主要文档、报告或成果
 
 ${position ? `岗位类型：${position}\n` : ''}`
-      } else {
-        prompt = `
+    } else {
+      prompt = `
 作为一个专业的产品经理JD分析专家，请分析以下产品经理岗位JD，提取三个关键维度的信息：
 
 1. 核心能力要求（3-5条）：提取岗位所需的关键能力和技能
@@ -108,25 +106,33 @@ ${position ? `岗位类型：${position}\n` : ''}
 JD内容：
 ${jdText}
 `
-      }
-      
-      prompt += '\n请以JSON格式返回分析结果，包含三个数组字段：coreAbilities、requirements、deliverables。每个数组包含对应维度的具体条目。'
-
-      aiConfig = {
-        apiKey: config.openaiApiKey,
-        baseURL: 'https://api.openai.com/v1',
-        model: 'gpt-4-vision-preview',  // 使用支持图像的模型
-        temperature: 0.3,
-        maxTokens: 2000,
-        topP: 1.0,
-        systemPrompt: '你是一个专业的产品经理JD分析专家，擅长提取JD中的关键信息并进行结构化输出。',
-        userPrompt: prompt
-      }
     }
-
-    // 验证配置
-    if (!aiConfig.apiKey) {
-      throw new Error('API密钥不能为空')
+    
+    prompt += '\n请以JSON格式返回分析结果，包含三个数组字段：coreAbilities、requirements、deliverables。每个数组包含对应维度的具体条目。'
+    
+    // 如果客户端没有提供完整配置，补充默认值
+    if (!aiConfig.systemPrompt) {
+      aiConfig.systemPrompt = '你是一个专业的产品经理JD分析专家，擅长提取JD中的关键信息并进行结构化输出。'
+    }
+    
+    if (!aiConfig.userPrompt) {
+      aiConfig.userPrompt = prompt
+    }
+    
+    if (!aiConfig.model) {
+      aiConfig.model = 'gpt-4-vision-preview'  // 使用支持图像的模型
+    }
+    
+    if (aiConfig.temperature === undefined) {
+      aiConfig.temperature = 0.3
+    }
+    
+    if (aiConfig.maxTokens === undefined) {
+      aiConfig.maxTokens = 2000
+    }
+    
+    if (aiConfig.topP === undefined) {
+      aiConfig.topP = 1.0
     }
 
     // 调用AI API

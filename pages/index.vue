@@ -1,499 +1,330 @@
 <template>
-  <div class="flex flex-col h-screen bg-[#FAFAFA] dark:bg-[#0F0F0F]">
-    <!-- 主内容区 -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- 欢迎界面 -->
-      <div v-if="!analysisResult" class="flex-1 flex flex-col">
-        <div class="flex-1 flex items-center justify-center p-8">
-          <div class="max-w-2xl w-full mx-auto space-y-12">
-            <!-- Logo 和标题 -->
-            <div class="text-center space-y-4">
-              <div class="w-14 h-14 rounded-full bg-[#FF6B6B] dark:bg-[#FF6B6B]/90 mx-auto flex items-center justify-center">
-                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-              </div>
-              <div>
-                <h1 class="text-2xl font-medium text-gray-900 dark:text-white">欢迎使用 JD Insight</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-2 text-base">基于 AI 的产品经理岗位智能解析工具</p>
-              </div>
-            </div>
-
-            <!-- 输入区域 -->
-            <div class="w-full space-y-6">
-              <!-- 文本输入框 -->
-              <div class="relative">
-                <textarea
-                  ref="textareaRef"
-                  v-model="jdText"
-                  placeholder="在这里粘贴 JD 文本..."
-                  class="w-full h-[200px] px-4 py-3 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 transition-all"
-                  :disabled="isAnalyzing"
-                ></textarea>
-                <div class="absolute bottom-3 right-3 flex items-center space-x-2 text-sm text-gray-400">
-                  <button
-                    v-if="jdText"
-                    @click="jdText = ''"
-                    class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <!-- 操作按钮 -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <button
-                    @click="triggerPDFUpload"
-                    class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <span>上传 PDF</span>
-                  </button>
-                  <button
-                    @click="triggerImageUpload"
-                    class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <span>上传图片</span>
-                  </button>
-                  <button
-                    @click="selectSample('senior')"
-                    class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                    <span>使用示例</span>
-                  </button>
-                </div>
-                <button
-                  @click="analyzeJD"
-                  :disabled="isAnalyzing || (!jdText.trim() && !selectedFile)"
-                  :class="[
-                    'flex items-center space-x-2 px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-                    isAnalyzing || (!jdText.trim() && !selectedFile)
-                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                      : 'bg-[#FF6B6B] hover:bg-[#FF6B6B]/90 text-white'
-                  ]"
-                >
-                  <svg v-if="isAnalyzing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>{{ isAnalyzing ? '分析中...' : '开始分析' }}</span>
-                </button>
-              </div>
-
-              <!-- 文件预览 -->
-              <div v-if="selectedFile" class="mt-4 p-4 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-xl">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 flex-shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <svg v-if="selectedFile.type === 'application/pdf'" class="w-6 h-6 text-[#FF6B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                      </svg>
-                      <svg v-else class="w-6 h-6 text-[#FF6B6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <div class="text-sm font-medium text-gray-900 dark:text-white">{{ selectedFile.name }}</div>
-                      <div class="text-xs text-gray-500 dark:text-gray-400">{{ formatFileSize(selectedFile.size) }}</div>
-                    </div>
-                  </div>
-                  <button
-                    @click="clearFile"
-                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                </div>
-                <div v-if="selectedFile.type.startsWith('image/')" class="mt-4">
-                  <img
-                    :src="previewUrl"
-                    alt="预览图片"
-                    class="max-h-48 rounded-lg object-contain mx-auto"
-                  />
-                </div>
-              </div>
-            </div>
+  <div class="flex flex-col h-full overflow-hidden">
+      <!-- 页面头部 -->
+      <div class="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1A1A1A] p-4">
+        <div class="flex items-center justify-between">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">JD 智能解析</h1>
+          <div class="flex items-center space-x-2">
+            <button
+              @click="showSampleModal = true"
+              class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
+            >
+              示例
+            </button>
           </div>
         </div>
       </div>
-
-      <!-- 分析结果 -->
-      <div v-else class="flex-1 overflow-y-auto px-4 py-8 md:px-8">
-        <div class="max-w-4xl mx-auto space-y-8">
-          <!-- 结果标题 -->
+      
+      <!-- 主内容 -->
+      <div class="flex-1 overflow-hidden">
+        <MainContent />
+      </div>
+    
+    <!-- 示例模态框 -->
+    <div
+      v-if="showSampleModal"
+      class="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+      @click.self="showSampleModal = false"
+    >
+      <div class="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <!-- 模态框头部 -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-medium text-gray-900 dark:text-white">分析结果</h2>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">选择示例</h3>
             <button
-              @click="resetAnalysis"
-              class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
-              </svg>
-              <span>重新分析</span>
-            </button>
-          </div>
-
-          <!-- 核心能力 -->
-          <div class="space-y-4">
-            <h3 class="text-base font-medium text-gray-700 dark:text-gray-300">核心能力要求</h3>
-            <div class="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
-              <div
-                v-for="(ability, index) in analysisResult.coreAbilities"
-                :key="index"
-                class="flex items-start space-x-3 text-gray-600 dark:text-gray-400"
-              >
-                <svg class="w-4 h-4 mt-1 text-[#FF6B6B] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-sm">{{ ability }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 岗位要求 -->
-          <div class="space-y-4">
-            <h3 class="text-base font-medium text-gray-700 dark:text-gray-300">岗位要求</h3>
-            <div class="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
-              <div
-                v-for="(requirement, index) in analysisResult.requirements"
-                :key="index"
-                class="flex items-start space-x-3 text-gray-600 dark:text-gray-400"
-              >
-                <svg class="w-4 h-4 mt-1 text-[#FF6B6B] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-sm">{{ requirement }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 核心产出物 -->
-          <div class="space-y-4">
-            <h3 class="text-base font-medium text-gray-700 dark:text-gray-300">核心产出物</h3>
-            <div class="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
-              <div
-                v-for="(deliverable, index) in analysisResult.deliverables"
-                :key="index"
-                class="flex items-start space-x-3 text-gray-600 dark:text-gray-400"
-              >
-                <svg class="w-4 h-4 mt-1 text-[#FF6B6B] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-sm">{{ deliverable }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 反馈按钮 -->
-          <div class="flex items-center justify-center space-x-4 pt-4">
-            <button
-              @click="submitFeedback('like')"
-              :disabled="feedback !== null"
-              :class="[
-                'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm transition-colors',
-                feedback === 'like'
-                  ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
-              ]"
+              @click="showSampleModal = false"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
-              <span>有帮助</span>
-            </button>
-            <button
-              @click="submitFeedback('dislike')"
-              :disabled="feedback !== null"
-              :class="[
-                'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm transition-colors',
-                feedback === 'dislike'
-                  ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
-              ]"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2"></path>
-              </svg>
-              <span>需改进</span>
             </button>
           </div>
         </div>
-      </div>
 
+        <!-- 模态框内容 -->
+        <div class="px-6 py-4 max-h-[calc(90vh-140px)] overflow-y-auto">
+          <div class="space-y-4">
+            <div
+              v-for="(sample, index) in sampleJDs"
+              :key="index"
+              class="p-4 border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+              @click="selectSample(sample)"
+            >
+              <h4 class="font-medium text-gray-900 dark:text-white mb-2">{{ sample.title }}</h4>
+              <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ sample.preview }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模态框底部 -->
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end">
+          <button
+            @click="showSampleModal = false"
+            class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <!-- 设置模态框 -->
     <div
       v-if="showSettings"
       class="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
       @click.self="showSettings = false"
     >
-      <div class="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+      <div class="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
         <!-- 模态框头部 -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white">AI 模型设置</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">AI 模型配置</h3>
+            <button
+              @click="showSettings = false"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- 模态框内容 -->
-        <div class="px-6 py-4 space-y-4">
-          <!-- API 提供商选择 -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">API 提供商</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                v-for="provider in providers"
-                :key="provider.value"
-                @click="aiSettings.apiProvider = provider.value"
-                :class="[
-                  'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm transition-colors',
-                  aiSettings.apiProvider === provider.value
-                    ? 'bg-[#FF6B6B]/10 dark:bg-[#FF6B6B]/5 text-[#FF6B6B]'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
-                ]"
-              >
-                <span>{{ provider.icon }}</span>
-                <span>{{ provider.name }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- API 密钥 -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">API 密钥</label>
-            <div class="relative">
-              <input
-                :type="showApiKey ? 'text' : 'password'"
-                v-model="aiSettings.apiKey"
-                placeholder="输入 API 密钥"
-                class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
-              />
-              <button
-                @click="showApiKey = !showApiKey"
-                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    v-if="showApiKey"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                  <path
-                    v-if="showApiKey"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  ></path>
-                  <path
-                    v-else
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- 模型选择 -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">模型选择</label>
-            <div class="relative">
-              <input
-                v-model="aiSettings.model"
-                type="text"
-                placeholder="输入模型名称，如：gpt-4-turbo-preview"
-                class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
-              />
-              <div class="mt-2 flex flex-wrap gap-2">
-                <button
-                  v-for="model in commonModels"
-                  :key="model.value"
-                  type="button"
-                  @click="aiSettings.model = model.value"
-                  class="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  {{ model.label }}
-                </button>
+        <div class="px-6 py-4 max-h-[calc(90vh-140px)] overflow-y-auto">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 基础语言模型配置 -->
+            <div class="space-y-6">
+              <div class="flex items-center space-x-3 mb-6">
+                <div class="w-3 h-3 rounded-full bg-[#FF6B6B]"></div>
+                <h4 class="text-lg font-medium text-gray-900 dark:text-white">基础语言模型</h4>
               </div>
-            </div>
-          </div>
 
-          <!-- 温度滑块 -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              温度（创造性）：{{ aiSettings.temperature.toFixed(1) }}
-            </label>
-            <input
-              type="range"
-              v-model="aiSettings.temperature"
-              min="0"
-              max="1"
-              step="0.1"
-              class="w-full"
-            />
-            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-              <span>精确</span>
-              <span>创造</span>
-            </div>
-          </div>
+              <!-- 提供商选择 -->
+              <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">服务提供商</label>
+                <select
+                  v-model="aiSettings.apiProvider"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
+                >
+                  <option v-for="provider in baseLanguageProviders" :key="provider.value" :value="provider.value">
+                    {{ provider.name }}
+                  </option>
+                </select>
+              </div>
 
-          <!-- 图片识别设置 -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">图片识别</label>
-              <button
-                @click="aiSettings.enableImageRecognition = !aiSettings.enableImageRecognition"
-                :class="[
-                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                  aiSettings.enableImageRecognition ? 'bg-[#FF6B6B]' : 'bg-gray-200 dark:bg-gray-700'
-                ]"
-              >
-                <span
-                  :class="[
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                    aiSettings.enableImageRecognition ? 'translate-x-5' : 'translate-x-0'
-                  ]"
+              <!-- 模型选择 -->
+              <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">模型选择</label>
+                <select
+                  v-model="aiSettings.model"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
+                >
+                  <option v-for="model in getAvailableModels(aiSettings.apiProvider)" :key="model.value" :value="model.value">
+                    {{ model.label }}
+                  </option>
+                  <option value="custom">自定义模型</option>
+                </select>
+                <input
+                  v-if="aiSettings.model === 'custom'"
+                  v-model="aiSettings.customModel"
+                  type="text"
+                  placeholder="输入自定义模型名称"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
                 />
-              </button>
-            </div>
-            <div v-if="aiSettings.enableImageRecognition" class="mt-4 space-y-4">
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">识别模型</label>
-                <div class="grid grid-cols-2 gap-2">
+              </div>
+
+              <!-- API 密钥 -->
+              <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">API 密钥</label>
+                <div class="relative">
+                  <input
+                    :type="showApiKey ? 'text' : 'password'"
+                    v-model="aiSettings.apiKey"
+                    placeholder="输入 API 密钥"
+                    class="w-full px-3 py-2.5 pr-10 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#FF6B6B]/20 dark:focus:ring-[#FF6B6B]/10 transition-all"
+                  />
                   <button
-                    v-for="model in imageModels"
-                    :key="model.value"
-                    @click="aiSettings.imageRecognitionModel = model.value"
-                    :class="[
-                      'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm transition-colors',
-                      aiSettings.imageRecognitionModel === model.value
-                        ? 'bg-[#FF6B6B]/10 dark:bg-[#FF6B6B]/5 text-[#FF6B6B]'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/50'
-                    ]"
+                    @click="showApiKey = !showApiKey"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    <span>{{ model.label }}</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        v-if="showApiKey"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      ></path>
+                      <path
+                        v-else
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.5"
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                      ></path>
+                    </svg>
                   </button>
                 </div>
-                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  启用后可以直接上传或拖放图片进行JD分析。目前支持Moonshot、智谱AI等多个模型。
-                </p>
+              </div>
+
+              <!-- 温度滑块 -->
+              <div class="space-y-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  温度（创造性）：{{ aiSettings.temperature.toFixed(1) }}
+                </label>
+                <input
+                  type="range"
+                  v-model="aiSettings.temperature"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>精确</span>
+                  <span>创造</span>
+                </div>
+              </div>
+
+              <!-- 基础模型连接测试 -->
+              <div class="space-y-3">
+                <button
+                  @click="testBaseModelConnection"
+                  :disabled="isTestingBase"
+                  class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-[#FF6B6B]/10 dark:bg-[#FF6B6B]/5 hover:bg-[#FF6B6B]/20 dark:hover:bg-[#FF6B6B]/10 text-[#FF6B6B] rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  <span>{{ isTestingBase ? '测试中...' : '测试基础模型连接' }}</span>
+                </button>
+                <div
+                  v-if="baseTestResult"
+                  :class="[
+                    'p-3 rounded-lg text-sm whitespace-pre-line',
+                    baseTestResult.success
+                      ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
+                      : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                  ]"
+                >
+                  {{ baseTestResult.message }}
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- API配置部分 -->
-          <div v-if="aiSettings.enableImageRecognition" class="mt-4 space-y-4">
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Moonshot API配置</label>
-              <div class="space-y-2">
-                <input
-                  v-model="aiSettings.moonshotApiKey"
-                  type="password"
-                  placeholder="Moonshot API Key（可选，默认使用通用Key）"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
-                <input
-                  v-model="aiSettings.moonshotBaseURL"
-                  type="text"
-                  placeholder="API Base URL（可选）"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
+            <!-- 图片识别模型配置 -->
+            <div class="space-y-6">
+              <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                  <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <h4 class="text-lg font-medium text-gray-900 dark:text-white">图片识别模型</h4>
+                </div>
+                <button
+                  @click="aiSettings.enableImageRecognition = !aiSettings.enableImageRecognition"
+                  :class="[
+                    'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                    aiSettings.enableImageRecognition ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                      aiSettings.enableImageRecognition ? 'translate-x-5' : 'translate-x-0'
+                    ]"
+                  />
+                </button>
               </div>
-            </div>
 
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">智谱API配置</label>
-              <div class="space-y-2">
-                <input
-                  v-model="aiSettings.zhipuApiKey"
-                  type="password"
-                  placeholder="智谱 API Key"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
-                <input
-                  v-model="aiSettings.zhipuBaseURL"
-                  type="text"
-                  placeholder="API Base URL（可选）"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
+              <div v-if="aiSettings.enableImageRecognition" class="space-y-6">
+                <!-- 图片识别提供商选择 -->
+                <div class="space-y-3">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">服务提供商</label>
+                  <select
+                    v-model="aiSettings.imageProvider"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 transition-all"
+                  >
+                    <option v-for="provider in imageProviders" :key="provider.value" :value="provider.value">
+                      {{ provider.name }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- 图片识别模型选择 -->
+                <div class="space-y-3">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">模型选择</label>
+                  <select
+                    v-model="aiSettings.imageRecognitionModel"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 transition-all"
+                  >
+                    <option v-for="model in getAvailableImageModels(aiSettings.imageProvider)" :key="model.value" :value="model.value">
+                      {{ model.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- 图片识别API配置 -->
+                <div class="space-y-4">
+                  <div v-if="aiSettings.imageProvider === 'moonshot'" class="space-y-3">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Moonshot API 配置</label>
+                    <input
+                      v-model="aiSettings.moonshotApiKey"
+                      type="password"
+                      placeholder="Moonshot API Key（可选，默认使用基础模型密钥）"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 transition-all"
+                    />
+                  </div>
+
+                  <div v-if="aiSettings.imageProvider === 'zhipu'" class="space-y-3">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">智谱 API 配置</label>
+                    <input
+                      v-model="aiSettings.zhipuApiKey"
+                      type="password"
+                      placeholder="智谱 API Key"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 transition-all"
+                    />
+                  </div>
+
+                  <div v-if="aiSettings.imageProvider === 'aliyun'" class="space-y-3">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">阿里云 API 配置</label>
+                    <input
+                      v-model="aiSettings.aliyunApiKey"
+                      type="password"
+                      placeholder="阿里云 API Key"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/10 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <!-- 图片识别模型连接测试 -->
+                <div class="space-y-3">
+                  <button
+                    @click="testImageModelConnection"
+                    :disabled="isTestingImage"
+                    class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-500/10 dark:bg-blue-500/5 hover:bg-blue-500/20 dark:hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    <span>{{ isTestingImage ? '测试中...' : '测试图片识别连接' }}</span>
+                  </button>
+                  <div
+                    v-if="imageTestResult"
+                    :class="[
+                      'p-3 rounded-lg text-sm whitespace-pre-line',
+                      imageTestResult.success
+                        ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
+                        : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                    ]"
+                  >
+                    {{ imageTestResult.message }}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">阿里云API配置</label>
-              <div class="space-y-2">
-                <input
-                  v-model="aiSettings.aliyunApiKey"
-                  type="password"
-                  placeholder="阿里云 API Key"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
-                <input
-                  v-model="aiSettings.aliyunBaseURL"
-                  type="text"
-                  placeholder="API Base URL"
-                  class="w-full px-4 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-800 rounded-lg text-sm"
-                />
+              <div v-else class="text-center py-8">
+                <div class="text-gray-400 dark:text-gray-600 mb-2">
+                  <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">启用图片识别功能以配置相关设置</p>
               </div>
-            </div>
-          </div>
-
-          <!-- 连接测试 -->
-          <div class="space-y-2">
-            <button
-              @click="testConnection"
-              :disabled="isTesting"
-              class="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-[#FF6B6B]/10 dark:bg-[#FF6B6B]/5 hover:bg-[#FF6B6B]/20 dark:hover:bg-[#FF6B6B]/10 text-[#FF6B6B] rounded-lg text-sm font-medium transition-colors"
-            >
-              <svg
-                v-if="isTesting"
-                class="animate-spin w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="3"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <span>{{ isTesting ? '测试中...' : '测试连接' }}</span>
-            </button>
-            <div
-              v-if="testResult"
-              :class="[
-                'mt-2 p-3 rounded-lg text-sm whitespace-pre-line',
-                testResult.success
-                  ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
-                  : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-              ]"
-            >
-              {{ testResult.message }}
             </div>
           </div>
         </div>
@@ -523,338 +354,218 @@
         </div>
       </div>
     </div>
-
-    <!-- 隐藏的文件输入框 -->
-    <input
-      ref="pdfInputRef"
-      type="file"
-      accept=".pdf"
-      class="hidden"
-      @change="handleFileSelect"
-    />
-    <input
-      ref="imageInputRef"
-      type="file"
-      accept="image/*"
-      class="hidden"
-      @change="handleFileSelect"
-    />
-  </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import { aiConfig } from '~/utils/aiConfig'
+import { ref, computed, onMounted, watch } from 'vue'
+import MainContent from '~/components/MainContent.vue'
 
-// 接口定义
-interface AnalysisResult {
-  coreAbilities: string[]
-  requirements: string[]
-  deliverables: string[]
-  requestId: string
+// 示例模态框状态
+const showSampleModal = ref(false)
+
+// 示例JD数据
+const sampleJDs = [
+  {
+    title: '高级产品经理 - 字节跳动',
+    preview: '负责抖音电商核心业务的产品规划和设计，推动产品从0到1的建设；深入理解用户需求，洞察行业趋势...',
+    content: `【职位】高级产品经理
+【公司】字节跳动
+【工作职责】
+1. 负责抖音电商核心业务的产品规划和设计，推动产品从0到1的建设；
+2. 深入理解用户需求，洞察行业趋势，制定产品策略和路线图；
+3. 与设计、研发、运营等团队紧密协作，确保产品高质量交付；
+4. 负责产品的数据分析，持续优化产品体验和业务指标；
+5. 跟踪竞品动态，保持产品的市场竞争力。
+
+【任职要求】
+1. 本科及以上学历，3年以上互联网产品经理经验，有电商或社交产品经验优先；
+2. 具备优秀的产品思维，能够深入理解用户需求并转化为产品方案；
+3. 具备良好的数据分析能力，能够通过数据驱动产品决策；
+4. 出色的沟通协调能力和项目管理能力，能够推动跨部门合作；
+5. 有较强的抗压能力和执行力，能够在快节奏的环境中高效工作；
+6. 熟悉电商行业生态和趋势，对产品有独到见解。`
+  },
+  {
+    title: '初级前端开发工程师 - 腾讯',
+    preview: '负责腾讯产品的Web前端开发，参与产品的用户界面设计，制作标准优化的代码...',
+    content: `【职位】初级前端开发工程师
+【公司】腾讯
+【工作职责】
+1. 负责腾讯产品的Web前端开发，参与产品的用户界面设计；
+2. 制作标准优化的代码，并增加交互动态功能；
+3. 与后端开发人员一起参与API的设计与实现；
+4. 负责前端页面性能优化，提升用户体验；
+5. 参与前端技术选型和技术架构设计。
+
+【任职要求】
+1. 本科及以上学历，计算机相关专业，1-3年前端开发经验；
+2. 熟悉HTML5、CSS3、JavaScript等前端技术，熟悉响应式布局；
+3. 熟悉Vue、React等主流前端框架，有实际项目经验；
+4. 了解Node.js，有一定的后端开发经验优先；
+5. 具有良好的团队协作精神和沟通能力；
+6. 对前端技术有浓厚兴趣，有自己的技术博客或开源项目者优先。`
+  },
+  {
+    title: '数据分析师 - 阿里巴巴',
+    preview: '负责业务数据的收集、清洗、分析和可视化，挖掘数据价值，为业务决策提供数据支持...',
+    content: `【职位】数据分析师
+【公司】阿里巴巴
+【工作职责】
+1. 负责业务数据的收集、清洗、分析和可视化，挖掘数据价值；
+2. 建立数据分析模型，为业务决策提供数据支持；
+3. 跟踪关键业务指标，发现异常并提出改进建议；
+4. 与产品、运营等团队合作，优化产品功能和用户体验；
+5. 定期输出数据分析报告，支持业务战略规划。
+
+【任职要求】
+1. 本科及以上学历，统计学、数学、计算机等相关专业；
+2. 2年以上数据分析相关工作经验，电商行业经验优先；
+3. 熟练使用SQL、Python或R等数据处理工具；
+4. 熟悉数据可视化工具，如Tableau、PowerBI等；
+5. 具备良好的数据敏感度和逻辑思维能力；
+6. 优秀的沟通表达能力，能够将复杂的数据分析结果清晰地传达给非技术人员。`
+  }
+]
+
+// 选择示例
+const selectSample = (sample: any) => {
+  // 关闭模态框
+  showSampleModal.value = false
+  
+  // 触发全局事件，将示例内容传递给MainContent组件
+  if (process.client) {
+    window.dispatchEvent(new CustomEvent('set-input-text', { 
+      detail: { text: sample.content } 
+    }))
+  }
 }
-
-// 在 AISettings 接口中添加新的配置项
-interface AISettings {
-  apiProvider: string
-  apiKey: string
-  model: string
-  temperature: number
-  enableImageRecognition: boolean // 新增：是否启用图片识别
-  imageRecognitionModel: string // 新增：图片识别使用的模型
-  moonshotApiKey?: string
-  moonshotBaseURL?: string
-  zhipuApiKey?: string
-  zhipuBaseURL?: string
-  aliyunApiKey?: string
-  aliyunBaseURL?: string
-}
-
-// 基础状态
-const jdText = ref('')
-const position = ref('')
-const selectedFile = ref<File | null>(null)
-const isAnalyzing = ref(false)
-const analysisResult = ref<AnalysisResult | null>(null)
-const feedback = ref<'like' | 'dislike' | null>(null)
-const textareaRef = ref<HTMLTextAreaElement>()
-const fileInputRef = ref<HTMLInputElement>()
-
-// 文件输入引用
-const pdfInputRef = ref<HTMLInputElement>()
-const imageInputRef = ref<HTMLInputElement>()
-const previewUrl = ref('')
 
 // 设置相关状态
 const showSettings = ref(false)
 const showApiKey = ref(false)
-const isTesting = ref(false)
-const testResult = ref<{ success: boolean; message: string } | null>(null)
+const isTestingBase = ref(false)
+const isTestingImage = ref(false)
+const baseTestResult = ref<{ success: boolean; message: string } | null>(null)
+const imageTestResult = ref<{ success: boolean; message: string } | null>(null)
+
+// AI设置接口
+interface AISettings {
+  apiProvider: string
+  apiKey: string
+  model: string
+  customModel: string
+  temperature: number
+  enableImageRecognition: boolean
+  imageProvider: string
+  imageRecognitionModel: string
+  moonshotApiKey?: string
+  zhipuApiKey?: string
+  aliyunApiKey?: string
+}
+
 const aiSettings = ref<AISettings>({
   apiProvider: 'openai',
   apiKey: '',
   model: 'gpt-4-turbo-preview',
+  customModel: '',
   temperature: 0.3,
   enableImageRecognition: false,
+  imageProvider: 'moonshot',
   imageRecognitionModel: 'moonshot-v1-8k',
   moonshotApiKey: '',
-  moonshotBaseURL: '',
   zhipuApiKey: '',
-  zhipuBaseURL: '',
-  aliyunApiKey: '',
-  aliyunBaseURL: ''
+  aliyunApiKey: ''
 })
 
-// AI 提供商选项
-const providers = [
-  { value: 'openai', name: 'OpenAI', icon: '🤖' },
-  { value: 'anthropic', name: 'Anthropic', icon: '🎭' },
-  { value: 'moonshot', name: 'Moonshot', icon: '🌙' },
-  { value: 'zhipu', name: '智谱AI', icon: '🧠' },
-  { value: 'custom', name: '自定义', icon: '⚙️' }
+// 基础语言模型提供商
+const baseLanguageProviders = [
+  { value: 'openai', name: 'OpenAI' },
+  { value: 'anthropic', name: 'Anthropic' },
+  { value: 'moonshot', name: 'Moonshot' },
+  { value: 'zhipu', name: '智谱AI' },
+  { value: 'aliyun', name: '阿里云' }
 ]
 
-// 常用模型列表
-const commonModels = [
-  { value: 'gpt-4-turbo-preview', label: 'GPT-4 Turbo' },
-  { value: 'gpt-4', label: 'GPT-4' },
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-  { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  { value: 'moonshot-v1-8k', label: 'Moonshot v1' },
-  { value: 'glm-4', label: 'GLM-4' }
+// 图片识别提供商
+const imageProviders = [
+  { value: 'moonshot', name: 'Moonshot' },
+  { value: 'zhipu', name: '智谱AI' },
+  { value: 'aliyun', name: '阿里云' }
 ]
+
+// 各提供商的模型列表
+const modelsByProvider = {
+  openai: [
+    { value: 'gpt-4-turbo-preview', label: 'GPT-4 Turbo Preview' },
+    { value: 'gpt-4', label: 'GPT-4' },
+    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+  ],
+  anthropic: [
+    { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+    { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
+  ],
+  moonshot: [
+    { value: 'moonshot-v1-8k', label: 'Moonshot V1 8K' },
+    { value: 'moonshot-v1-32k', label: 'Moonshot V1 32K' },
+    { value: 'moonshot-v1-128k', label: 'Moonshot V1 128K' }
+  ],
+  zhipu: [
+    { value: 'glm-4', label: 'GLM-4' },
+    { value: 'glm-3-turbo', label: 'GLM-3 Turbo' }
+  ],
+  aliyun: [
+    { value: 'qwen-turbo', label: 'Qwen Turbo' },
+    { value: 'qwen-plus', label: 'Qwen Plus' },
+    { value: 'qwen-max', label: 'Qwen Max' }
+  ]
+}
 
 // 图片识别模型列表
-const imageModels = [
-  { value: 'moonshot-v1-8k', label: 'Moonshot V1', provider: 'moonshot' },
-  { value: 'moonshot-v1-32k', label: 'Moonshot V1-32K', provider: 'moonshot' },
-  { value: 'glm-4v', label: 'GLM-4V', provider: 'zhipu' },
-  { value: 'qwen-vl-plus', label: 'Qwen VL+', provider: 'aliyun' }
-]
+const imageModelsByProvider = {
+  moonshot: [
+    { value: 'moonshot-v1-8k', label: 'Moonshot V1 8K' },
+    { value: 'moonshot-v1-32k', label: 'Moonshot V1 32K' }
+  ],
+  zhipu: [
+    { value: 'glm-4v', label: 'GLM-4V' }
+  ],
+  aliyun: [
+    { value: 'qwen-vl-plus', label: 'Qwen VL Plus' },
+    { value: 'qwen-vl-max', label: 'Qwen VL Max' }
+  ]
+}
 
-// 示例JD数据
-const sampleJDs = {
-  senior: {
-    text: `高级产品经理
-岗位职责：
-1. 负责公司核心产品的规划、设计和优化，制定产品发展战略
-2. 深入了解用户需求，通过数据分析和用户调研驱动产品迭代
-3. 协调技术、设计、运营等跨部门团队，推进产品按时上线
-4. 建立完善的产品数据体系，持续跟踪产品效果并优化
-5. 管理产品全生命周期，从需求分析到产品发布的全流程把控
+// 获取可用模型的函数
+const getAvailableModels = (provider: string) => {
+  return modelsByProvider[provider as keyof typeof modelsByProvider] || []
+}
 
-任职要求：
-1. 本科及以上学历，计算机、互联网相关专业优先
-2. 5年以上互联网产品经验，有过0-1或1-10产品经历
-3. 具备优秀的逻辑思维能力和数据分析能力
-4. 熟练使用Axure、Figma等产品设计工具
-5. 有过B端或C端产品成功案例，有团队管理经验优先`,
-    position: '高级PM'
+// 获取图片识别可用模型的函数
+const getAvailableImageModels = (provider: string) => {
+  return imageModelsByProvider[provider as keyof typeof imageModelsByProvider] || []
+}
+
+// AI配置管理
+const aiConfig = {
+  getSettings: () => {
+    if (process.client) {
+      const settings = localStorage.getItem('ai-settings')
+      return settings ? JSON.parse(settings) : aiSettings.value
+    }
+    return aiSettings.value
   },
-  strategy: {
-    text: `策略产品经理
-岗位职责：
-1. 负责推荐算法、搜索算法等策略产品的设计和优化
-2. 通过A/B测试和数据挖掘，持续优化用户体验和业务指标
-3. 与算法工程师紧密合作，将业务需求转化为技术方案
-4. 建立策略效果评估体系，定期回顾和优化策略效果
-5. 关注行业趋势，探索新的策略方向和技术应用
-
-任职要求：
-1. 硕士及以上学历，计算机、数学、统计学等相关专业
-2. 3年以上策略产品或算法产品经验
-3. 具备强大的数据分析能力，熟练使用SQL、Python等工具
-4. 了解机器学习、深度学习等相关技术原理
-5. 有推荐系统、搜索引擎、广告系统等相关经验优先`,
-    position: '策略PM'
-  }
-}
-
-// 工具函数
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-// AI 设置相关函数
-const loadAISettings = () => {
-  try {
-    const settings = aiConfig.getSettings()
-    aiSettings.value = {
-      apiProvider: settings.apiProvider,
-      apiKey: settings.apiKey,
-      model: settings.model,
-      temperature: settings.temperature,
-      enableImageRecognition: settings.enableImageRecognition ?? false,
-      imageRecognitionModel: settings.imageRecognitionModel ?? 'moonshot-v1-8k',
-      moonshotApiKey: settings.moonshotApiKey,
-      moonshotBaseURL: settings.moonshotBaseURL,
-      zhipuApiKey: settings.zhipuApiKey,
-      zhipuBaseURL: settings.zhipuBaseURL,
-      aliyunApiKey: settings.aliyunApiKey,
-      aliyunBaseURL: settings.aliyunBaseURL
-    }
-  } catch (error) {
-    console.error('加载AI设置失败:', error)
-  }
-}
-
-const saveSettings = () => {
-  try {
-    const fullSettings = aiConfig.getSettings()
-    const updatedSettings = {
-      ...fullSettings,
-      apiProvider: aiSettings.value.apiProvider,
-      apiKey: aiSettings.value.apiKey,
-      model: aiSettings.value.model,
-      temperature: aiSettings.value.temperature,
-      enableImageRecognition: aiSettings.value.enableImageRecognition,
-      imageRecognitionModel: aiSettings.value.imageRecognitionModel,
-      moonshotApiKey: aiSettings.value.moonshotApiKey,
-      moonshotBaseURL: aiSettings.value.moonshotBaseURL,
-      zhipuApiKey: aiSettings.value.zhipuApiKey,
-      zhipuBaseURL: aiSettings.value.zhipuBaseURL,
-      aliyunApiKey: aiSettings.value.aliyunApiKey,
-      aliyunBaseURL: aiSettings.value.aliyunBaseURL
-    }
-    aiConfig.saveSettings(updatedSettings)
-    showSettings.value = false
-    testResult.value = null
-    alert('设置已保存')
-  } catch (error) {
-    console.error('保存设置失败:', error)
-    alert('保存失败，请重试')
-  }
-}
-
-const resetAISettings = () => {
-  if (confirm('确定要重置为默认设置吗？')) {
-    aiSettings.value = {
-      apiProvider: 'openai',
-      apiKey: '',
-      model: 'gpt-4-turbo-preview',
-      temperature: 0.3,
-      enableImageRecognition: false,
-      imageRecognitionModel: 'moonshot-v1-8k',
-      moonshotApiKey: '',
-      moonshotBaseURL: '',
-      zhipuApiKey: '',
-      zhipuBaseURL: '',
-      aliyunApiKey: '',
-      aliyunBaseURL: ''
-    }
-    testResult.value = null
-  }
-}
-
-const resetTestResult = () => {
-  testResult.value = null
-}
-
-// 文件处理相关函数
-const triggerFileUpload = () => {
-  fileInputRef.value?.click()
-}
-
-const clearFile = () => {
-  if (selectedFile.value?.type.startsWith('image/') && previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = ''
-  }
-  selectedFile.value = null
-  if (fileInputRef.value) {
-    fileInputRef.value.value = ''
-  }
-}
-
-const handleFileSelect = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  if (input.files && input.files[0]) {
-    const file = input.files[0]
-    if (file.size > 5 * 1024 * 1024) {
-      alert('文件大小不能超过5MB')
-      return
-    }
-    
-    if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-      selectedFile.value = file
-      if (file.type.startsWith('image/')) {
-        previewUrl.value = URL.createObjectURL(file)
-      }
-    } else {
-      alert('只支持PDF和图片文件(JPG, PNG, JPEG等)')
-      return
+  saveSettings: (settings: AISettings) => {
+    if (process.client) {
+      localStorage.setItem('ai-settings', JSON.stringify(settings))
     }
   }
 }
 
-const handlePaste = async (event: ClipboardEvent) => {
-  const items = event.clipboardData?.items
-  if (!items) return
-  
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf('image') !== -1) {
-      event.preventDefault()
-      
-      const file = items[i].getAsFile()
-      if (!file) continue
-      
-      if (file.size > 5 * 1024 * 1024) {
-        alert('图片大小不能超过5MB')
-        return
-      }
-      
-      selectedFile.value = file
-      alert('已粘贴图片，点击"开始分析"按钮进行分析')
-    }
-  }
-}
-
-// 触发文件上传
-const triggerPDFUpload = () => {
-  pdfInputRef.value?.click()
-}
-
-const triggerImageUpload = () => {
-  imageInputRef.value?.click()
-}
-
-// 处理文件拖放
-const handleDrop = (event: DragEvent) => {
-  event.preventDefault()
-  const files = event.dataTransfer?.files
-  if (files && files[0]) {
-    const file = files[0]
-    if (file.size > 5 * 1024 * 1024) {
-      alert('文件大小不能超过5MB')
-      return
-    }
-    
-    if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
-      selectedFile.value = file
-      if (file.type.startsWith('image/')) {
-        previewUrl.value = URL.createObjectURL(file)
-      }
-    } else {
-      alert('只支持PDF和图片文件(JPG, PNG, JPEG等)')
-      return
-    }
-  }
-}
-
-// 处理拖放事件
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault()
-}
-
-// 测试 API 连通性
-const testConnection = async () => {
+// 测试基础模型连接
+const testBaseModelConnection = async () => {
   if (!aiSettings.value.apiKey.trim()) {
-    testResult.value = {
+    baseTestResult.value = {
       success: false,
       message: '请先输入 API 密钥'
     }
@@ -862,373 +573,209 @@ const testConnection = async () => {
   }
 
   try {
-    isTesting.value = true
-    testResult.value = null
+    isTestingBase.value = true
+    baseTestResult.value = null
 
+    const modelToTest = aiSettings.value.model === 'custom' ? aiSettings.value.customModel : aiSettings.value.model
+    
+    // 调用测试连接API
     const response = await fetch('/api/v1/test-connection', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        apiProvider: aiSettings.value.apiProvider,
         apiKey: aiSettings.value.apiKey,
-        model: aiSettings.value.model || 'gpt-3.5-turbo'
+        baseURL: getProviderBaseURL(aiSettings.value.apiProvider),
+        model: modelToTest,
+        type: 'base',
+        provider: aiSettings.value.apiProvider
       })
     })
-
+    
     const result = await response.json()
-
-    if (response.ok && result.success) {
-      testResult.value = {
-        success: true,
-        message: `✅ 连接成功！\n模型：${result.model || aiSettings.value.model}\n响应时间：${result.responseTime || 'N/A'}ms`
-      }
-    } else {
-      testResult.value = {
-        success: false,
-        message: `❌ 连接失败\n${result.message || '未知错误'}`
-      }
-    }
-  } catch (error) {
-    console.error('连通性测试错误:', error)
-    testResult.value = {
-      success: false,
-      message: `❌ 测试失败\n网络错误或服务不可用`
-    }
-  } finally {
-    isTesting.value = false
-  }
-}
-
-// 获取图片识别的API配置
-const getImageRecognitionConfig = () => {
-  const provider = imageModels.find(m => m.value === aiSettings.value.imageRecognitionModel)?.provider
-  if (!provider) return null
-
-  // 根据提供商获取对应的API配置
-  const settings = aiConfig.getSettings()
-  switch (provider) {
-    case 'moonshot':
-      return {
-        apiKey: settings.moonshotApiKey || settings.apiKey, // 优先使用专用key，否则使用通用key
-        baseURL: settings.moonshotBaseURL || 'https://api.moonshot.cn/v1',
-        model: aiSettings.value.imageRecognitionModel
-      }
-    case 'zhipu':
-      return {
-        apiKey: settings.zhipuApiKey,
-        baseURL: settings.zhipuBaseURL || 'https://open.bigmodel.cn/api/paas/v4',
-        model: aiSettings.value.imageRecognitionModel
-      }
-    case 'aliyun':
-      return {
-        apiKey: settings.aliyunApiKey,
-        baseURL: settings.aliyunBaseURL,
-        model: aiSettings.value.imageRecognitionModel
-      }
-    default:
-      return null
-  }
-}
-
-// 示例和分析相关函数
-const selectSample = (type: 'senior' | 'strategy') => {
-  const sample = sampleJDs[type]
-  jdText.value = sample.text
-  position.value = sample.position
-  nextTick(() => {
-    textareaRef.value?.focus()
-  })
-}
-
-const resetAnalysis = () => {
-  analysisResult.value = null
-  feedback.value = null
-  jdText.value = ''
-  position.value = ''
-  selectedFile.value = null
-}
-
-const openSettings = () => {
-  loadAISettings()
-  showSettings.value = true
-}
-
-// 分析JD
-const analyzeJD = async () => {
-  try {
-    isAnalyzing.value = true
-    feedback.value = null
     
-    if (!jdText.value && !selectedFile.value) {
-      alert('请输入JD文本或上传文件')
-      return
-    }
-    
-    const validation = aiConfig.validateSettings()
-    if (!validation.isValid) {
-      const errorMsg = validation.errors.join('\n')
-      if (confirm(`配置验证失败：\n${errorMsg}\n\n是否打开设置进行配置？`)) {
-        openSettings()
-      }
-      return
-    }
-    
-    const apiConfig = aiConfig.getAPIConfig()
-    const prompts = aiConfig.buildPrompt(jdText.value, position.value)
-    
-    const formData = new FormData()
-    
-    // 如果是图片文件，使用配置的模型处理
-    if (selectedFile.value && selectedFile.value.type.startsWith('image/')) {
-      if (!aiSettings.value.enableImageRecognition) {
-        alert('请先在设置中启用图片识别功能')
-        isAnalyzing.value = false
-        return
-      }
-
-      // 获取图片识别配置
-      const imageConfig = getImageRecognitionConfig()
-      if (!imageConfig) {
-        alert('图片识别配置无效，请检查设置')
-        isAnalyzing.value = false
-        return
-      }
-
-      // 验证API Key
-      if (!imageConfig.apiKey) {
-        if (confirm('未配置图片识别所需的API密钥，是否前往设置？')) {
-          openSettings()
-        }
-        isAnalyzing.value = false
-        return
-      }
-
-      try {
-        // 将图片转换为 base64
-        const base64Image = await new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result)
-          reader.onerror = reject
-          reader.readAsDataURL(selectedFile.value!)
-        })
-
-        // 构建请求
-        const imageRequest = {
-          request: {
-            model: imageConfig.model,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  {
-                    type: 'text',
-                    text: '请帮我提取这张图片中的JD文本内容，只需要返回提取的文本，不需要任何分析。'
-                  },
-                  {
-                    type: 'image_url',
-                    image_url: {
-                      url: base64Image as string
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          apiKey: imageConfig.apiKey,
-          baseURL: imageConfig.baseURL
-        }
-
-        const imageResponse = await fetch('/api/v1/image-recognition', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(imageRequest)
-        })
-
-        if (!imageResponse.ok) {
-          const errorData = await imageResponse.json().catch(() => ({}))
-          if (imageResponse.status === 401) {
-            if (confirm('图片识别API密钥无效或已过期，是否前往设置？')) {
-              openSettings()
-            }
-            return
-          }
-          throw new Error(errorData.message || '图片处理失败')
-        }
-
-        const imageResult = await imageResponse.json()
-        if (imageResult.success && imageResult.text) {
-          jdText.value = imageResult.text
-          formData.append('jdText', imageResult.text)
-        } else {
-          throw new Error(imageResult.message || '图片处理失败')
-        }
-      } catch (error) {
-        console.error('图片处理错误:', error)
-        alert('图片处理失败，请尝试手动输入文本或上传PDF文件')
-        isAnalyzing.value = false
-        return
-      }
-    } else {
-      // PDF或直接输入的文本
-      if (jdText.value) {
-        formData.append('jdText', jdText.value)
-      }
-      if (selectedFile.value) {
-        formData.append('file', selectedFile.value)
-      }
-    }
-    
-    if (position.value) {
-      formData.append('position', position.value)
-    }
-    
-    // 添加AI配置
-    const aiConfigData = {
-      apiKey: apiConfig.apiKey,
-      baseURL: apiConfig.baseURL,
-      model: apiConfig.model,
-      temperature: apiConfig.temperature,
-      maxTokens: apiConfig.maxTokens,
-      topP: apiConfig.topP,
-      systemPrompt: prompts.system,
-      userPrompt: prompts.user
-    }
-    formData.append('aiConfig', JSON.stringify(aiConfigData))
-
-    const response = await fetch('/api/v1/analyze', {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      
-      if (response.status === 401) {
-        const provider = aiSettings.value.apiProvider || 'openai'
-        const providerName = providers.find(p => p.value === provider)?.name || provider
-        
-        alert(`❌ API 认证失败 (401)\n\n可能的原因：\n` +
-              `• API 密钥错误或过期\n` +
-              `• 当前选择的提供商：${providerName}\n` +
-              `• 请检查密钥是否与提供商匹配\n\n` +
-              `建议：\n` +
-              `• 重新复制粘贴 API 密钥\n` +
-              `• 确认选择了正确的 AI 服务提供商\n` +
-              `• 检查账户余额和权限`)
-        
-        openSettings()
-        return
-      } else if (response.status === 429) {
-        alert('❌ API 请求频率限制 (429)\n\n请稍后再试或检查您的 API 套餐限制。')
-        return
-      } else if (response.status >= 500) {
-        alert('❌ 服务器错误\n\n服务暂时不可用，请稍后重试。')
-        return
-      }
-      
-      throw new Error(errorData.message || `请求失败 (${response.status})`)
-    }
-
-    const result = await response.json()
     if (result.success) {
-      analysisResult.value = result.data
-    } else {
-      throw new Error(result.message || '分析失败')
-    }
-  } catch (error) {
-    console.error('分析出错:', error)
-    
-    if (error instanceof Error) {
-      if (error.message.includes('401') || error.message.includes('authentication')) {
-        alert('🔑 API 认证问题\n\n请检查您的 API 密钥设置，点击左侧设置按钮进行配置。')
-        openSettings()
-      } else if (error.message.includes('network') || error.message.includes('fetch')) {
-        alert('🌐 网络连接问题\n\n请检查网络连接并重试。')
-      } else {
-        alert(`❌ 分析失败\n\n错误信息：${error.message}`)
+      baseTestResult.value = {
+        success: true,
+        message: `✅ 基础模型连接成功！\n模型：${result.model || modelToTest}\n配置已保存`
       }
     } else {
-      alert('❌ 分析失败，请稍后重试')
+      throw new Error(result.message)
+    }
+  } catch (error) {
+    baseTestResult.value = {
+      success: false,
+      message: `❌ 基础模型测试失败\n${error instanceof Error ? error.message : '网络错误或服务不可用'}`
     }
   } finally {
-    isAnalyzing.value = false
+    isTestingBase.value = false
   }
 }
 
-const submitFeedback = async (rating: 'like' | 'dislike') => {
-  if (!analysisResult.value) return
+// 测试图片识别模型连接
+const testImageModelConnection = async () => {
+  if (!aiSettings.value.enableImageRecognition) {
+    imageTestResult.value = {
+      success: false,
+      message: '请先启用图片识别功能'
+    }
+    return
+  }
+  
+  // 获取对应提供商的API密钥
+  let apiKey = ''
+  if (aiSettings.value.imageProvider === 'moonshot') {
+    apiKey = aiSettings.value.moonshotApiKey || aiSettings.value.apiKey
+  } else if (aiSettings.value.imageProvider === 'zhipu') {
+    apiKey = aiSettings.value.zhipuApiKey
+  } else if (aiSettings.value.imageProvider === 'aliyun') {
+    apiKey = aiSettings.value.aliyunApiKey
+  }
+  
+  if (!apiKey.trim()) {
+    imageTestResult.value = {
+      success: false,
+      message: '请先输入图片识别模型的 API 密钥'
+    }
+    return
+  }
 
   try {
-    feedback.value = rating
+    isTestingImage.value = true
+    imageTestResult.value = null
     
-    const response = await fetch('/api/v1/feedback', {
+    // 调用测试连接API
+    const response = await fetch('/api/v1/test-connection', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        requestId: analysisResult.value.requestId,
-        rating
+        apiKey,
+        baseURL: getProviderBaseURL(aiSettings.value.imageProvider),
+        model: aiSettings.value.imageRecognitionModel,
+        type: 'image',
+        provider: aiSettings.value.imageProvider
       })
     })
-
-    if (!response.ok) {
-      throw new Error('提交反馈失败')
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      imageTestResult.value = {
+        success: true,
+        message: `✅ 图片识别模型连接成功！\n模型：${result.model || aiSettings.value.imageRecognitionModel}\n配置已保存`
+      }
+    } else {
+      throw new Error(result.message)
     }
   } catch (error) {
-    console.error('提交反馈出错:', error)
-    feedback.value = null
+    imageTestResult.value = {
+      success: false,
+      message: `❌ 图片识别模型测试失败\n${error instanceof Error ? error.message : '网络错误或服务不可用'}`
+    }
+  } finally {
+    isTestingImage.value = false
   }
 }
 
-// 生命周期钩子
+// 获取提供商的基础URL
+const getProviderBaseURL = (provider: string) => {
+  switch (provider) {
+    case 'openai':
+      return 'https://api.openai.com/v1'
+    case 'anthropic':
+      return 'https://api.anthropic.com/v1'
+    case 'moonshot':
+      return 'https://api.moonshot.cn/v1'
+    case 'zhipu':
+      return 'https://open.bigmodel.cn/api/paas/v4'
+    case 'aliyun':
+      return 'https://dashscope.aliyuncs.com/api/v1'
+    default:
+      return 'https://api.openai.com/v1'
+  }
+}
+
+// 加载AI设置
+const loadAISettings = () => {
+  try {
+    const settings = aiConfig.getSettings()
+    Object.assign(aiSettings.value, settings)
+  } catch (error) {
+    console.error('加载AI设置失败:', error)
+  }
+}
+
+// 保存设置
+const saveSettings = () => {
+  try {
+    aiConfig.saveSettings(aiSettings.value)
+    showSettings.value = false
+    baseTestResult.value = null
+    imageTestResult.value = null
+    alert('设置已保存')
+  } catch (error) {
+    console.error('保存设置失败:', error)
+    alert('保存失败，请重试')
+  }
+}
+
+// 重置设置
+const resetAISettings = () => {
+  if (confirm('确定要重置为默认设置吗？')) {
+    aiSettings.value = {
+      apiProvider: 'openai',
+      apiKey: '',
+      model: 'gpt-4-turbo-preview',
+      customModel: '',
+      temperature: 0.3,
+      enableImageRecognition: false,
+      imageProvider: 'moonshot',
+      imageRecognitionModel: 'moonshot-v1-8k',
+      moonshotApiKey: '',
+      zhipuApiKey: '',
+      aliyunApiKey: ''
+    }
+    baseTestResult.value = null
+    imageTestResult.value = null
+  }
+}
+
+// 监听提供商变化，自动选择第一个可用模型
+watch(() => aiSettings.value.apiProvider, (newProvider) => {
+  const availableModels = getAvailableModels(newProvider)
+  if (availableModels.length > 0) {
+    aiSettings.value.model = availableModels[0].value
+  }
+})
+
+watch(() => aiSettings.value.imageProvider, (newProvider) => {
+  const availableModels = getAvailableImageModels(newProvider)
+  if (availableModels.length > 0) {
+    aiSettings.value.imageRecognitionModel = availableModels[0].value
+  }
+})
+
+
+// 监听全局事件
 onMounted(() => {
   loadAISettings()
   
   if (process.client) {
-    window.addEventListener('open-settings', openSettings)
-    window.addEventListener('new-analysis', resetAnalysis)
-    window.addEventListener('select-sample', (e: any) => {
-      selectSample(e.detail.type)
+    // 监听打开设置事件
+    window.addEventListener('open-settings', () => {
+      showSettings.value = true
     })
-    window.addEventListener('trigger-file-upload', triggerFileUpload)
-  }
-
-  textareaRef.value?.addEventListener('paste', handlePaste)
-  const textarea = textareaRef.value
-  if (textarea) {
-    textarea.addEventListener('dragover', handleDragOver)
-    textarea.addEventListener('drop', handleDrop)
-  }
-})
-
-watch(aiSettings, () => {
-  resetTestResult()
-}, { deep: true })
-
-onUnmounted(() => {
-  if (process.client) {
-    window.removeEventListener('open-settings', openSettings)
-    window.removeEventListener('new-analysis', resetAnalysis)
-    window.removeEventListener('select-sample', (e: any) => {
-      selectSample(e.detail.type)
+    
+    // 监听选择示例事件
+    window.addEventListener('select-sample', (event: Event) => {
+      const customEvent = event as CustomEvent
+      if (customEvent.detail?.type === 'senior') {
+        showSampleModal.value = true
+      }
     })
-    window.removeEventListener('trigger-file-upload', triggerFileUpload)
-  }
-
-  textareaRef.value?.removeEventListener('paste', handlePaste)
-  const textarea = textareaRef.value
-  if (textarea) {
-    textarea.removeEventListener('dragover', handleDragOver)
-    textarea.removeEventListener('drop', handleDrop)
-  }
-
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
   }
 })
 </script>

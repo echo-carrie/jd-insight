@@ -6,7 +6,8 @@
       @mouseleave="hideSidebar"
       :class="[
         'fixed left-0 top-0 h-full bg-white/80 dark:bg-[#1A1A1A]/80 border-r border-gray-100 dark:border-gray-800/50 flex flex-col transition-all duration-300 ease-in-out z-[100] backdrop-blur-sm',
-        isSidebarCollapsed ? 'w-[60px]' : 'w-[260px]'
+        isSidebarCollapsed ? 'w-[60px]' : 'w-[260px]',
+        isMobile && isSidebarCollapsed ? 'sidebar-mobile-hidden' : ''
       ]"
     >
       <!-- Logo -->
@@ -109,20 +110,45 @@
       </div>
     </div>
 
+    <!-- 移动设备侧边栏切换按钮 -->
+    <button 
+      v-if="isMobile" 
+      @click="toggleSidebar"
+      class="fixed left-4 top-4 z-[101] bg-white dark:bg-[#1A1A1A] p-2 rounded-lg shadow-md border border-gray-200 dark:border-gray-800"
+    >
+      <svg v-if="isSidebarCollapsed" class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+      <svg v-else class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+    
     <!-- 主内容区 -->
-    <div class="flex-1 flex flex-col min-w-0 ml-[60px] bg-[#FAFAFA] dark:bg-[#0F0F0F]">
+    <div :class="[
+      'flex-1 flex flex-col min-w-0 bg-[#FAFAFA] dark:bg-[#0F0F0F] transition-all duration-300',
+      isMobile && isSidebarCollapsed ? 'ml-0' : 'ml-[60px]'
+    ]">
       <NuxtPage />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const isSidebarCollapsed = ref(true) // 默认收起
 const isHovered = ref(false)
+const isMobile = ref(false)
+
+// 检测设备是否为移动设备
+const checkMobile = () => {
+  if (process.client) {
+    isMobile.value = window.innerWidth < 768
+  }
+}
 
 // 显示侧边栏
 const showSidebar = () => {
@@ -133,8 +159,28 @@ const showSidebar = () => {
 // 隐藏侧边栏
 const hideSidebar = () => {
   isHovered.value = false
-  isSidebarCollapsed.value = true
+  // 在移动设备上，只有当用户主动点击关闭按钮时才收起侧边栏
+  if (!isMobile.value) {
+    isSidebarCollapsed.value = true
+  }
 }
+
+// 切换侧边栏状态
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+// 监听窗口大小变化
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onBeforeUnmount(() => {
+  if (process.client) {
+    window.removeEventListener('resize', checkMobile)
+  }
+})
 
 // 模拟的历史记录数据
 const recentRecords = ref([

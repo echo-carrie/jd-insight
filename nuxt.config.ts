@@ -41,8 +41,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 私有密钥 (仅在服务端可用)
     jwtSecret: process.env.NUXT_JWT_SECRET || '',
-    // 服务器预设配置
-    serverPreset: process.env.SERVER_PRESET || 'vercel_edge',
+    // 服务器预设配置 - 使用标准 Node.js 运行时
+    serverPreset: process.env.SERVER_PRESET || 'vercel',
     
     // 公共密钥 (客户端可用)
     public: {
@@ -66,8 +66,8 @@ export default defineNuxtConfig({
     }
   },
   
-  // 兼容性日期
-  compatibilityDate: '2025-08-05',
+  // 兼容性日期 - 使用当前日期而非未来日期
+  compatibilityDate: '2023-08-05',
 
   // Nuxt Image 配置
   image: {
@@ -78,11 +78,15 @@ export default defineNuxtConfig({
     }
   },
 
-  // Nitro 配置优化 - 使用标准Vercel部署而非Edge Functions
+  // Nitro 配置优化 - 使用 Node.js 运行时以支持 openai 依赖
   nitro: {
-    preset: 'vercel',
+    preset: 'vercel',  // 使用标准 Node.js 运行时而不是 Edge
     minify: true,
     compressPublicAssets: true,
+    // 配置外部依赖
+    experimental: {
+      wasm: true
+    },
     routeRules: {
       '/api/**': { 
         cors: true,
@@ -92,9 +96,6 @@ export default defineNuxtConfig({
           'Access-Control-Allow-Methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         }
-      },
-      '/**': { 
-        isr: true 
       }
     }
   },

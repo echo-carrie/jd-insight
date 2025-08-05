@@ -1,7 +1,5 @@
 import { readMultipartFormData } from 'h3'
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const pdfParse = require('pdf-parse/lib/pdf-parse.js')
+// 完全移除pdf-parse相关代码
 
 interface AnalysisResult {
   coreAbilities: string[]
@@ -48,18 +46,8 @@ export default defineEventHandler(async (event) => {
       } else if (part.name === 'file' && part.data) {
         // 处理上传的文件
         if (part.filename?.endsWith('.pdf')) {
-          // 解析PDF文件
-          try {
-            const options = {
-              max: 0,
-              pagerender: null
-            }
-            const pdfData = await pdfParse(part.data, options)
-            jdText = pdfData.text
-          } catch (error) {
-            console.error('PDF解析错误:', error)
-            throw new Error('PDF文件解析失败')
-          }
+          // 在Edge环境中，我们不直接解析PDF，而是将其作为文本提示用户上传文本
+          throw new Error('在当前环境中不支持PDF解析，请直接复制JD文本或上传图片')
         } else if (part.filename?.match(/\.(jpe?g|png|gif|webp)$/i)) {
           // 处理图片文件
           try {

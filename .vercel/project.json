@@ -1,1 +1,16 @@
-{"projectName":"trae_jd-insight-nuxt_0z6j"}
+{
+  "projectId": "prj_h2LOebHtmaA9wEzL4Rfwtru3KPvc",
+  "orgId": "team_52nqNLqqHdknzzfSNzJ6lqKT",
+  "projectName": "jd-insight",
+  "settings": {
+    "createdAt": 1754307185121,
+    "framework": "nuxtjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "22.x"
+  }
+}

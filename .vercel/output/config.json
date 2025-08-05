@@ -62,48 +62,8 @@
       "dest": "/__nitro"
     },
     {
-      "src": "(?<url>/.*)",
-      "dest": "/__nitro-/?url=$url"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/robots.txt"
-    },
-    {
-      "src": "/api/v1/test-connection",
-      "dest": "/api/v1/test-connection"
-    },
-    {
-      "src": "/api/v1/image-recognition",
-      "dest": "/api/v1/image-recognition"
-    },
-    {
-      "src": "/api/v1/feedback",
-      "dest": "/api/v1/feedback"
-    },
-    {
-      "src": "/api/v1/env-check",
-      "dest": "/api/v1/env-check"
-    },
-    {
-      "src": "/api/v1/analyze",
-      "dest": "/api/v1/analyze"
-    },
-    {
-      "src": "/api/generate-sitemap",
-      "dest": "/api/generate-sitemap"
-    },
-    {
-      "src": "/__nuxt_error",
-      "dest": "/__nuxt_error"
-    },
-    {
-      "src": "/_ipx/(?:.*)",
-      "dest": "/_ipx/[...]"
-    },
-    {
-      "src": "/__nuxt_island/(?:.*)",
-      "dest": "/__nuxt_island/[...]"
+      "src": "/(.*)",
+      "dest": "/__nitro"
     }
   ]
 }

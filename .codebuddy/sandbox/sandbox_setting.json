@@ -1,0 +1,20 @@
+{
+  "path": "d:\\code\\JD_insight\\jd-insight-nuxt\\.vercel\\output\\static",
+  "desc": "这是一个基于Nuxt 3的产品经理岗位JD智能解析工具，帮助产品经理小白快速理解岗位核心能力要求、岗位条件需求和核心产出物。",
+  "id": "7bdcd1085e744f69905a1352c0a4bf5e",
+  "data": {
+    "spaceKey": "7bdcd1085e744f69905a1352c0a4bf5e",
+    "connections": {
+      "webIDE": "https://7bdcd1085e744f69905a1352c0a4bf5e.ap-singapore.cloudstudio.club",
+      "preview": "https://7bdcd1085e744f69905a1352c0a4bf5e--{port}.ap-singapore.cloudstudio.club",
+      "api": "https://7bdcd1085e744f69905a1352c0a4bf5e--api.ap-singapore.cloudstudio.club",
+      "pty": "https://7bdcd1085e744f69905a1352c0a4bf5e--pty.ap-singapore.cloudstudio.club"
+    }
+  },
+  "config": {
+    "api": "https://7bdcd1085e744f69905a1352c0a4bf5e--api.ap-singapore.cloudstudio.club",
+    "pty": "https://7bdcd1085e744f69905a1352c0a4bf5e--pty.ap-singapore.cloudstudio.club",
+    "region": "ap-shanghai",
+    "spaceKey": "7bdcd1085e744f69905a1352c0a4bf5e"
+  }
+}

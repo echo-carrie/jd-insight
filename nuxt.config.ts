@@ -40,7 +40,6 @@ export default defineNuxtConfig({
   // 运行时配置
   runtimeConfig: {
     // 私有密钥 (仅在服务端可用)
-    openaiApiKey: process.env.NUXT_OPENAI_API_KEY || '',
     jwtSecret: process.env.NUXT_JWT_SECRET || '',
     // Vercel KV配置
     kvRestApiUrl: process.env.KV_REST_API_URL || '',

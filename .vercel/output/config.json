@@ -56,14 +56,6 @@
     },
     {
       "handle": "filesystem"
-    },
-    {
-      "src": "/__nuxt_error",
-      "dest": "/__nitro"
-    },
-    {
-      "src": "(?<url>/.*)",
-      "dest": "/__nitro?url=$url"
     }
   ]
 }

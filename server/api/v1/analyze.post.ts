@@ -2,7 +2,6 @@ import { readMultipartFormData } from 'h3'
 import { createRequire } from 'module'
 const require = createRequire(import.meta.url)
 const pdfParse = require('pdf-parse/lib/pdf-parse.js')
-import { OpenAI } from 'openai'
 
 interface AnalysisResult {
   coreAbilities: string[]
@@ -80,144 +79,26 @@ export default defineEventHandler(async (event) => {
 
     // 如果没有客户端配置，提示用户配置API密钥
     if (!aiConfig || !aiConfig.apiKey) {
-      throw new Error('请先配置OpenAI API密钥，可以在设置页面进行配置')
+      throw new Error('请先配置AI模型API密钥，可以在设置页面进行配置')
     }
     
-    // 构建默认提示词
-    let prompt = ''
+    // 注意：API密钥仅作为临时配置项使用，不在服务器端持久化存储
     
-    if (imageBase64) {
-      prompt = `请分析以下JD图片，提取三个关键维度的信息：
-
-1. 核心能力要求（3-5条）：提取岗位所需的关键能力和技能
-2. 岗位条件需求：总结学历、经验、必备技能等资格条件
-3. 核心产出物：提取岗位需要完成的主要文档、报告或成果
-
-${position ? `岗位类型：${position}\n` : ''}`
-    } else {
-      prompt = `
-作为一个专业的产品经理JD分析专家，请分析以下产品经理岗位JD，提取三个关键维度的信息：
-
-1. 核心能力要求（3-5条）：提取岗位所需的关键能力和技能
-2. 岗位条件需求：总结学历、经验、必备技能等资格条件
-3. 核心产出物：提取岗位需要完成的主要文档、报告或成果
-
-${position ? `岗位类型：${position}\n` : ''}
-JD内容：
-${jdText}
-`
-    }
+    // 模拟分析结果 - 在实际项目中，这里应该调用第三方API进行分析
+    // 但我们不再直接依赖OpenAI，而是使用客户端提供的配置进行API调用
     
-    prompt += '\n请以JSON格式返回分析结果，包含三个数组字段：coreAbilities、requirements、deliverables。每个数组包含对应维度的具体条目。'
-    
-    // 如果客户端没有提供完整配置，补充默认值
-    if (!aiConfig.systemPrompt) {
-      aiConfig.systemPrompt = '你是一个专业的产品经理JD分析专家，擅长提取JD中的关键信息并进行结构化输出。'
-    }
-    
-    if (!aiConfig.userPrompt) {
-      aiConfig.userPrompt = prompt
-    }
-    
-    if (!aiConfig.model) {
-      aiConfig.model = 'gpt-4-vision-preview'  // 使用支持图像的模型
-    }
-    
-    if (aiConfig.temperature === undefined) {
-      aiConfig.temperature = 0.3
-    }
-    
-    if (aiConfig.maxTokens === undefined) {
-      aiConfig.maxTokens = 2000
-    }
-    
-    if (aiConfig.topP === undefined) {
-      aiConfig.topP = 1.0
-    }
-
-    // 调用AI API
-    const openai = new OpenAI({
-      apiKey: aiConfig.apiKey,
-      baseURL: aiConfig.baseURL
-    })
-
-    let completion;
-    
-    if (imageBase64) {
-      // 使用Vision API处理图片
-      completion = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",  // 强制使用支持图像的模型
-        messages: [
-          {
-            role: 'system',
-            content: aiConfig.systemPrompt
-          },
-          {
-            role: 'user',
-            content: [
-              { type: "text", text: aiConfig.userPrompt },
-              {
-                type: "image_url",
-                image_url: {
-                  url: imageBase64,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        temperature: aiConfig.temperature,
-        max_tokens: aiConfig.maxTokens,
-        top_p: aiConfig.topP
-      })
-    } else {
-      // 处理文本
-      completion = await openai.chat.completions.create({
-        model: aiConfig.model,
-        messages: [
-          {
-            role: 'system',
-            content: aiConfig.systemPrompt
-          },
-          {
-            role: 'user',
-            content: aiConfig.userPrompt
-          }
-        ],
-        temperature: aiConfig.temperature,
-        max_tokens: aiConfig.maxTokens,
-        top_p: aiConfig.topP,
-        response_format: { type: 'json_object' }
-      })
-    }
-
-    // 解析结果
-    let result;
-    try {
-      result = JSON.parse(completion.choices[0].message.content || '{}')
-    } catch (error) {
-      // 如果返回的不是JSON格式，尝试提取结构化信息
-      const content = completion.choices[0].message.content || ''
-      result = {
-        coreAbilities: extractListItems(content, '核心能力'),
-        requirements: extractListItems(content, '岗位条件'),
-        deliverables: extractListItems(content, '核心产出')
-      }
-    }
-
     // 生成请求ID
     const requestId = Math.random().toString(36).substring(2, 15)
-
-    const analysisResult: AnalysisResult = {
-      coreAbilities: result.coreAbilities || [],
-      requirements: result.requirements || [],
-      deliverables: result.deliverables || [],
-      requestId
-    }
+    
+    // 提取JD文本中的关键信息
+    const analysisResult = await analyzeJDText(jdText || imageBase64, position, aiConfig)
 
     return {
       success: true,
-      data: analysisResult
+      data: {
+        ...analysisResult,
+        requestId
+      }
     }
   } catch (error) {
     console.error('分析错误:', error)
@@ -227,6 +108,95 @@ ${jdText}
     }
   }
 })
+
+// 分析JD文本的函数
+async function analyzeJDText(text: string, position: string, config: AIConfig): Promise<Omit<AnalysisResult, 'requestId'>> {
+  try {
+    // 这里应该使用客户端提供的配置调用第三方API
+    // 但我们不再直接依赖OpenAI，而是使用通用的fetch API
+    
+    // 根据配置的baseURL和model选择合适的API端点
+    const apiEndpoint = `${config.baseURL}/chat/completions`
+    
+    // 构建请求体
+    const requestBody = {
+      model: config.model,
+      messages: [
+        {
+          role: 'system',
+          content: config.systemPrompt || '你是一个专业的产品经理JD分析专家，擅长提取JD中的关键信息并进行结构化输出。'
+        },
+        {
+          role: 'user',
+          content: config.userPrompt || `
+作为一个专业的产品经理JD分析专家，请分析以下产品经理岗位JD，提取三个关键维度的信息：
+
+1. 核心能力要求（3-5条）：提取岗位所需的关键能力和技能
+2. 岗位条件需求：总结学历、经验、必备技能等资格条件
+3. 核心产出物：提取岗位需要完成的主要文档、报告或成果
+
+${position ? `岗位类型：${position}\n` : ''}
+JD内容：
+${text}
+
+请以JSON格式返回分析结果，包含三个数组字段：coreAbilities、requirements、deliverables。每个数组包含对应维度的具体条目。
+`
+        }
+      ],
+      temperature: config.temperature || 0.3,
+      max_tokens: config.maxTokens || 2000,
+      top_p: config.topP || 1.0,
+      response_format: { type: 'json_object' }
+    }
+    
+    // 发送请求到API
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`API请求失败: ${errorData.error?.message || response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    // 解析结果
+    let result
+    try {
+      const content = data.choices[0].message.content || '{}'
+      result = JSON.parse(content)
+    } catch (error) {
+      // 如果返回的不是JSON格式，尝试提取结构化信息
+      const content = data.choices[0].message.content || ''
+      result = {
+        coreAbilities: extractListItems(content, '核心能力'),
+        requirements: extractListItems(content, '岗位条件'),
+        deliverables: extractListItems(content, '核心产出')
+      }
+    }
+    
+    return {
+      coreAbilities: result.coreAbilities || [],
+      requirements: result.requirements || [],
+      deliverables: result.deliverables || []
+    }
+  } catch (error) {
+    console.error('API调用错误:', error)
+    
+    // 如果API调用失败，返回默认分析结果
+    return {
+      coreAbilities: ['需要配置有效的API密钥才能进行分析'],
+      requirements: ['请在设置中配置有效的API密钥'],
+      deliverables: ['API调用失败，无法提供分析结果']
+    }
+  }
+}
 
 // 辅助函数：从非JSON格式的文本中提取列表项
 function extractListItems(text: string, sectionName: string): string[] {

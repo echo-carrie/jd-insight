@@ -1,0 +1,2 @@
+import o from"node:process";globalThis._importMeta_={url:import.meta.url,env:o.env};import{p as t,t as r,u as e}from"./chunks/_/nitro.mjs";import"node:http";import"node:https";import"node:events";import"node:buffer";import"node:url";import"ipx";import"node:fs";import"node:path";import"node:crypto";const p=r(e().h3App),listener=function(o,r){const e=o.headers["x-now-route-matches"];if(e){const{url:r}=t(e);r&&(o.url=r)}return p(o,r)};export{listener as default};
+//# sourceMappingURL=index.mjs.map

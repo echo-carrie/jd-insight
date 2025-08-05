@@ -41,9 +41,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 私有密钥 (仅在服务端可用)
     jwtSecret: process.env.NUXT_JWT_SECRET || '',
-    // Vercel KV配置
-    kvRestApiUrl: process.env.KV_REST_API_URL || '',
-    kvRestApiToken: process.env.KV_REST_API_TOKEN || '',
     // 服务器预设配置
     serverPreset: process.env.SERVER_PRESET || 'vercel_edge',
     
@@ -77,13 +74,6 @@ export default defineNuxtConfig({
     preset: 'vercel',
     minify: true,
     compressPublicAssets: true,
-    // 配置Vercel KV存储
-    storage: {
-      'kv': {
-        driver: 'vercelKV',
-        // KV配置将从环境变量中获取
-      }
-    },
     routeRules: {
       '/api/**': { 
         cors: true,

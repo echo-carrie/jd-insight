@@ -85,16 +85,6 @@ export default defineNuxtConfig({
         // KV配置将从环境变量中获取
       }
     },
-    // 自定义Vercel构建输出配置
-    vercel: {
-      config: {
-        // @ts-ignore - regions 在类型定义中可能缺失，但在文档中是有效的
-        regions: ['hnd1', 'sin1'], // 指定部署区域，例如东京和新加坡
-        isr: {
-          expiration: 60, // ISR缓存过期时间（秒）
-        }
-      }
-    },
     routeRules: {
       '/api/**': { 
         cors: true,

@@ -69,6 +69,15 @@ export default defineNuxtConfig({
   // 兼容性日期
   compatibilityDate: '2025-08-05',
 
+  // Nuxt Image 配置
+  image: {
+    provider: 'ipx',
+    ipx: {
+      // 确保在Vercel环境中正确加载ipx
+      baseURL: '/ipx'
+    }
+  },
+
   // Nitro 配置优化 - 使用标准Vercel部署而非Edge Functions
   nitro: {
     preset: 'vercel',
